@@ -1,6 +1,12 @@
 # go-find-references
 Find all References of an Identifier in a Codebase
 
+### Install
+
+```
+go install
+```
+
 ### Usage
 
 > go-find-references [flags]
@@ -8,6 +14,8 @@ Find all References of an Identifier in a Codebase
 ###### flags:
 `-file [string]`: the complete path of the file that contains the identifier.  
 `-offset [int]`: the byte offset of the identifier in the above file.  
+`-line [int]`: the line number of the identifier in the file.  
+`-column [int]`: the column number of the identifier in the file.  
 `-root [string]`: the directory in which to search for references (optional). If omitted, the directory containing `file` will be used.
 
 For each found reference, the program will output two lines of text:  

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path"
 
@@ -11,18 +12,58 @@ import (
 )
 
 var (
-	byteOffset = flag.Int("offset", -1, "the byte offset of the identifier in the file")
-	filePath   = flag.String("file", "", "the file path containing the identifier")
-	searchRoot = flag.String("root", "", "the root directory in which to search for references")
-	showIdent  = flag.Bool("ident", false, "whether to show the name and position where the identifier is defined")
+	byteOffset   = flag.Int("offset", -1, "the byte offset of the identifier in the file")
+	lineNumber   = flag.Int("line", -1, "the line number of the identifier in the file")
+	columnNumber = flag.Int("column", -1, "the column number of the identifier in the file")
+	filePath     = flag.String("file", "", "the file path containing the identifier")
+	searchRoot   = flag.String("root", "", "the root directory in which to search for references")
+	showIdent    = flag.Bool("ident", false, "whether to show the name and position where the identifier is defined")
 )
+
+func translateByteOffset(filePath string, lineNumber, columnNumber int) int {
+	file, err := os.Open(filePath)
+	if err != nil {
+		panic(err)
+	}
+
+	defer file.Close()
+
+	reader := bufio.NewReader(file)
+	currentLineNumber := 0
+	byteOffset := 0
+	for {
+		// returning a slice containing the data up to and including the delimiter.
+		line, err := reader.ReadBytes('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+
+		currentLineNumber++
+
+		if currentLineNumber == lineNumber {
+			byteOffset += columnNumber
+			return byteOffset
+		} else {
+			byteOffset += len(line)
+		}
+	}
+
+	return 0
+}
 
 func main() {
 	flag.Parse()
 
-	if *filePath == "" || *byteOffset == -1 {
+	if *filePath == "" || (*byteOffset == -1 && !(*lineNumber != -1 && *columnNumber != -1)) {
 		flag.Usage()
 		return
+	}
+
+	// if line/column number is specified, translate to byte offset
+	if *lineNumber != -1 && *columnNumber != -1 {
+		*byteOffset = translateByteOffset(*filePath, *lineNumber, *columnNumber)
 	}
 
 	if *searchRoot == "" {
